@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <base th:href="@{/}">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Document</title>
+    <link rel="stylesheet" href="static/css/minireset.css"/>
+    <link rel="stylesheet" href="static/css/common.css"/>
+    <link rel="stylesheet" href="static/css/cart.css"/>
+    <link rel="stylesheet" href="static/css/bookManger.css"/>
+</head>
+<body>
+<div class="header">
+    <div class="w">
+        <div class="header-left">
+            <a href="index.html">
+                <img src="static/img/bookstore_logo.jpg" alt=""
+                /></a>
+            <h1>图书管理系统</h1>
+        </div>
+        <div class="header-right" th:include="manager/base::header">
+
+        </div>
+    </div>
+</div>
+<div class="list">
+    <div class="w">
+        <div class="add">
+            <a href="book?flag=toAddBookPage">添加图书</a>
+        </div>
+        <table>
+            <thead>
+            <tr>
+                <th>图片</th>
+                <th>商品名称</th>
+                <th>价格</th>
+                <th>作者</th>
+                <th>销量</th>
+                <th>库存</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="book,status : ${books}">
+                <td>
+                    <img th:src="${book.imgPath}" alt=""/>
+                </td>
+                <td th:text="${book.bookName}">活着</td>
+                <td th:text="${book.price}">100.00</td>
+                <td th:text="${book.author}">余华</td>
+                <td th:text="${book.sales}">200</td>
+                <td th:text="${book.stock}">400</td>
+                <td>
+                    <a th:href="@{/book(flag='toUpdateBookPage',id=${book.bookId})}">修改</a>
+                    <a th:href="@{/book(flag='deleteBook',id=${book.bookId})}" class="del">删除</a>
+                    <a th:href="@{/bookImage(flag='toUploadBookImagePage',id=${book.bookId})}">上传图片</a>
+                </td>
+            </tr>
+
+            </tbody>
+        </table>
+        <div class="footer">
+            <div class="footer-right">
+                <div>首页</div>
+                <div>上一页</div>
+                <ul>
+                    <li class="active">1</li>
+                    <li>2</li>
+                    <li>3</li>
+                </ul>
+                <div>下一页</div>
+                <div>末页</div>
+                <span>共10页</span>
+                <span>30条记录</span>
+                <span>到第</span>
+                <input type="text"/>
+                <span>页</span>
+                <button>确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

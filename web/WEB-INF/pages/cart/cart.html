@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en"  xmlns:th="http://www.thymeleaf.org">
+<head>
+  <base th:href="@{/}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+  <link rel="stylesheet" href="static/css/minireset.css" />
+  <link rel="stylesheet" href="static/css/common.css" />
+  <link rel="stylesheet" href="static/css/cart.css" />
+  <script src="static/script/vue.js"></script>
+  <script src="static/script/axios.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="w">
+      <div class="header-left">
+        <a href="index.html">
+          <img src="static/img/bookstore_logo.jpg" alt=""
+          /></a>
+        <h1>我的购物车</h1>
+      </div>
+      <div class="header-right">
+        <h3>欢迎<span th:text="${session.user.username}"></span>光临书城</h3>
+        <div class="order"><a href="order?flag=showOrders">我的订单</a></div>
+        <div class="destory"><a href="user?flag=logout">注销</a></div>
+        <div class="gohome">
+          <a href="index.html">返回</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list">
+    <div class="w">
+      <table>
+        <thead>
+        <tr>
+          <th>图片</th>
+          <th>商品名称</th>
+          <th>数量</th>
+          <th>单价</th>
+          <th>金额</th>
+          <th>操作</th>
+        </tr>
+        </thead>
+        <tbody v-if="totalCount==0">
+          <tr>
+            <td colspan="6" align="center">
+              购物车为空，请点击继续购物
+            </td>
+          </tr>
+        </tbody>
+        <tbody v-if="totalCount!=0">
+        <tr v-for="(cartItem,index) in cartItems">
+          <td>
+            <img :src="cartItem.book.imgPath" alt="" />
+          </td>
+          <td>{{cartItem.book.bookName}}</td>
+          <td>
+            <span class="count" @click="subtractCount">-</span>
+            <input class="count-num" type="text" v-model="cartItem.count" @change="changeCount" :name="cartItem.book.bookId"/>
+            <span class="count" @click="addCount">+</span>
+          </td>
+          <td>{{cartItem.book.price}}</td>
+          <td>{{cartItem.amount}}</td>
+          <td><a href="" @click="deleteCartItem" :name="cartItem.book.bookId">删除</a></td>
+        </tr>
+
+        </tbody>
+      </table>
+      <div class="footer">
+        <div class="footer-left">
+          <a href="cart?flag=clearCart" class="clear-cart">清空购物车</a>
+          <a href="index.html">继续购物</a>
+        </div>
+        <div class="footer-right">
+          <div>共<span>{{totalCount}}</span>件商品</div>
+          <div class="total-price">总金额<span>{{totalAmount}}</span>元</div>
+          <a class="pay" href="order?flag=createOrder">去结账</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="w">
+      <div class="top">
+        <ul>
+          <li>
+            <a href="">
+              <img src="static/img/bottom1.png" alt="" />
+            </a>
+          </li>
+          <li>
+            <a href="">
+              <img src="static/img/bottom.png" alt="" />
+            </a>
+          </li>
+          <li>
+            <a href="">
+              <img src="static/img/bottom2.png" alt="" />
+            </a>
+          </li>
+        </ul>
+      </div>
+  </div>
+</div>
+<script>
+  new Vue({
+    el:"#app",
+    data:{
+      cartItems:[],
+      totalCount:0,
+      totalAmount:0
+    },
+    methods:{
+      //showCart什么时候被调用？在Vue对象创建后，挂载前执行(钩子函数)
+      showCart:function () {
+        //往后台发送异步请求，拿到数据(必须在本页面渲染之前拿到数据)，展示在网页上
+        //alert("Vue对象创建后执行");
+        axios({
+          method:"post",
+          url:"cart",
+          params:{
+            flag:"showCart",
+          }
+        }).then(response=>{
+          if(response.data.flag){
+          //alert(response.data.resultData[0]);
+          //需要将后台传过来的数据，展示在网页上(vue的方式)
+          this.cartItems=response.data.resultData[0];
+          this.totalCount=response.data.resultData[1];
+          this.totalAmount=response.data.resultData[2];
+        }
+      });
+      },
+      deleteCartItem:function () {
+        //发送异步请求，删除当前购物项(将图书的id带过去)
+        var id = event.target.name;
+        // alert(id);
+        axios({
+          method:"post",
+          url:"cart",
+          params:{
+            flag:"deleteCartItem",
+            id:id
+          }
+        }).then(response=>{
+          if(response.data.flag){
+          //alert(response.data.resultData[0]);
+          //需要将后台传过来的数据，展示在网页上(vue的方式)
+          this.cartItems=response.data.resultData[0];
+          this.totalCount=response.data.resultData[1];
+          this.totalAmount=response.data.resultData[2];
+        }
+      });
+        event.preventDefault();//阻止控件默认行为，即让超链接失效
+      },
+      addCount:function () {
+        //发送异步请求，对当前购物项的数量 + 1(需要当前购物项的图书id)
+        var id = event.target.previousElementSibling.name;
+        axios({
+          method:"post",
+          url:"cart",
+          params:{
+            flag:"addCount",
+            id:id
+          }
+        }).then(response=>{
+          if(response.data.flag){
+          //需要将后台传过来的数据，展示在网页上(vue的方式)
+          this.cartItems=response.data.resultData[0];
+          this.totalCount=response.data.resultData[1];
+          this.totalAmount=response.data.resultData[2];
+          }
+        });
+      },
+      subtractCount:function () {
+        //当目前购物项数量为1的话，执行的是删除操作
+        //1.获得文本框的value属性值
+        var count = event.target.nextElementSibling.value;
+        var id = event.target.nextElementSibling.name;
+        if(count==1) {
+          //问一下确定要删除吗
+          if(confirm("确定要删除吗?")) {
+            //执行删除操作(再发送一个请求删除)
+            axios({
+              method:"post",
+              url:"cart",
+              params:{
+                flag:"deleteCartItem",
+                id:id
+              }
+            }).then(response=>{
+              if(response.data.flag){
+              //需要将后台传过来的数据，展示在网页上(vue的方式)
+              this.cartItems=response.data.resultData[0];
+              this.totalCount=response.data.resultData[1];
+              this.totalAmount=response.data.resultData[2];
+              }
+            });
+          }
+        }else {//说明count不为1，肯定大于1
+          axios({
+            method:"post",
+            url:"cart",
+            params:{
+              flag:"subtractCount",
+              id:id
+            }
+          }).then(response=>{
+            if(response.data.flag){
+            //需要将后台传过来的数据，展示在网页上(vue的方式)
+            this.cartItems=response.data.resultData[0];
+            this.totalCount=response.data.resultData[1];
+            this.totalAmount=response.data.resultData[2];
+          }
+      }); };
+      },
+      changeCount:function () {
+        //需要将将当前购物项的图书id取到，还需要将用户修改后的数量取到
+        var id = event.target.name;
+        var newCount = event.target.value;//修改的数量,做一个验证,必须是数字，而且必须大于0
+        axios({
+          method:"post",
+          url:"cart",
+          params:{
+            flag:"changeCount",
+            id:id,
+            newCount:newCount
+          }
+        }).then(response=>{
+          if(response.data.flag){
+          //需要将后台传过来的数据，展示在网页上(vue的方式)
+          this.cartItems=response.data.resultData[0];
+          this.totalCount=response.data.resultData[1];
+          this.totalAmount=response.data.resultData[2];
+        }
+      });
+      }
+    },
+    created:function () {
+      this.showCart();
+    }
+  })
+</script>
+</body>
+</html>

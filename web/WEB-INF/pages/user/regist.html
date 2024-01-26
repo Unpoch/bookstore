@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <base th:href="@{/}">
+    <meta charset="UTF-8" />
+    <title>书城会员注册页面</title>
+    <link type="text/css" rel="stylesheet" href="static/css/style.css" />
+    <link rel="stylesheet" href="static/css/register.css" />
+    <style type="text/css">
+      .login_form {
+        height: 420px;
+        margin-top: 25px;
+      }
+    </style>
+    <script src="static/script/vue.js"></script>
+    <script src="static/script/axios.min.js"></script>
+  </head>
+  <body>
+  <div id="app">
+    <div id="login_header">
+      <a href="index.html">
+        <img class="logo_img" alt="" src="static/img/bookstore_logo.jpg" />
+      </a>
+    </div>
+
+    <div class="login_banner">
+      <div class="register_form">
+        <h1>注册书城会员</h1>
+        <form action="user?flag=regist" @submit="checkAll" method="post">
+          <div class="form-item">
+            <div>
+              <label>用户名称:</label>
+              <input type="text" placeholder="请输入用户名" name="username" @blur="checkUsername" v-model="username"/>
+            </div>
+            <span class="errMess">{{usernameErrMsg}}</span>
+          </div>
+          <div class="form-item">
+            <div>
+              <label>用户密码:</label>
+              <input type="password" placeholder="请输入密码" name="password" @blur="checkPassword" v-model="password"/>
+            </div>
+            <span class="errMess">{{passwordErrMsg}}</span>
+          </div>
+          <div class="form-item">
+            <div>
+              <label>确认密码:</label>
+              <input type="password" placeholder="请输入确认密码" @blur="checkConfirmPassword" v-model="confirmPassword"/>
+            </div>
+            <span class="errMess">{{confirmPasswordErrMsg}}</span>
+          </div>
+          <div class="form-item">
+            <div>
+              <label>用户邮箱:</label>
+              <input type="text" placeholder="请输入邮箱" name="email" @blur="checkEmail" v-model="email"/>
+            </div>
+            <span class="errMess">{{emailErrMsg}}</span>
+          </div>
+		 
+          <div class="form-item">
+            <div>
+              <label>验证码:</label>
+              <div class="verify">
+                <input type="text" placeholder="" name="code" v-model="code"/>
+                <img :src="codeSrc" alt="" width="150px" @click="changeCode"/>
+              </div>
+            </div>
+            <span class="errMess">{{codeErrMsg}}</span>
+          </div>
+          <button class="btn">注册</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script>
+    new Vue({
+      el:"#app",
+      data:{
+        username:"[[${user!=null?user.username:''}]]",
+        usernameErrMsg:"用户名应为6~16位数字和字母组成",
+        password:"[[${user!=null?user.password:''}]]",
+        passwordErrMsg:"密码的长度至少为8位",
+        confirmPassword:"[[${user!=null?user.password:''}]]",
+        confirmPasswordErrMsg:"密码两次输入不一致",
+        email:"[[${user!=null?user.email:''}]]",
+        emailErrMsg:"请输入正确的邮箱格式",
+        code:"[[${code}]]",
+        codeErrMsg:"[[${codeErrMsg==null?'请输入正确的验证码':codeErrMsg}]]",
+        codeSrc:"kaptchaServlet",
+        usernameFlag:false
+      },
+      methods:{
+        changeCode:function () {
+            //换一张图片,再访问一遍kaptchaServlet，也就是src赋值
+            //但是每次想都访问kaptchaServlet，浏览器会认为src没有发生变化(缓存，因此不会访问kaptchaServlet
+            //因此要进行修改
+          this.codeSrc="kaptchaServlet?aa=" + new Date();
+        },
+        checkUsername:function () {
+          var usernameReg=/^[a-zA-Z0-9]{6,16}$/;
+          if(usernameReg.test(this.username)) {
+            //需要将信息提示改为空或者对号
+            //在格式通过验证之后，需要做用户名唯一性的验证(发送异步请求)
+            axios({
+              method:"post",
+              url:"user",             //访问UserServlet
+              params:{
+                flag:"checkUsername",  //因为使用了BaseServlet，要带请求参数flag
+                username:this.username  //输入的用户名进行了双向绑定，因此要把输入的用户名传过去
+              }
+            }).then(response=>{
+              if(response.data.flag){
+                this.usernameErrMsg="√";
+                //return true;这里return true，返回值不是checkUsername这个函数的返回值
+                //而是这个回调函数的返回值
+                this.usernameFlag=true;
+              }else {
+                this.usernameErrMsg="用户名重复，请更换";
+                //return false;
+                this.usernameFlag=false;
+              }
+            });
+            return true;
+          }else {
+            this.usernameErrMsg="用户名应为6~16位数字和字母组成";
+            return false;
+          }
+        },
+        checkPassword:function () {
+          var passwordReg=/^[a-zA-Z0-9]{8,}$/;
+          if(passwordReg.test(this.password)) {
+            this.passwordErrMsg="√";
+            return true;
+          }else {
+            this.passwordErrMsg="密码的长度至少为8位";
+            return false;
+          }
+        },
+        checkConfirmPassword:function () {
+          if(this.checkPassword()) {
+            if(this.password==this.confirmPassword) {
+              this.confirmPasswordErrMsg="√";
+              return true;
+            }else {
+              this.confirmPasswordErrMsg="密码两次输入不一致";
+              return false;
+            }
+          }
+          return false;
+        },
+        checkEmail:function () {
+          var emailReg=/^[a-zA-Z0-9_\.-]+@([a-zA-Z0-9-]+[\.]{1})+[a-zA-Z]+$/;
+          if(emailReg.test(this.email)) {
+            this.emailErrMsg="√";
+            return true;
+          }else {
+            this.emailErrMsg="请输入正确的邮箱格式";
+            return false;
+          }
+        },
+        //点击注册，检查所有的表单，存在错误的不能提交
+        checkAll:function () {
+          this.checkUsername();//先执行，usernameFlag的值被设置好了
+          if(!(this.usernameFlag&this.checkPassword()&this.checkConfirmPassword()&this.checkEmail())) {
+            //阻止表单提交
+            event.preventDefault();
+          }
+        }
+      }
+    })
+  </script>
+  </body>
+</html>
